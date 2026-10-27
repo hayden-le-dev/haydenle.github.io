@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tri Le Insight and Code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: agency case-study site. Oversized wide headline with a Strategist/Builder switch, a live-looking terminal card, case studies laid out as Brief / Approach / Output rows, a 4-step process strip, toolkit columns, contact band. */
+:root {
+  --bg: #ffffff;
+  --paper: #f1f2f6;
+  --ink: #101119;
+  --muted: #5b5f70;
+  --line: #e0e2ea;
+  --accent: #2f3cf5;
+  --accent-ink: #ffffff;
+  --hot: #ff5a36;
+  --term-bg: #101119;
+  --term-fg: #d9dcf0;
+  --display: "Archivo", "Arial Black", system-ui, sans-serif;
+  --body: "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0c12; --paper: #151722; --ink: #eef0f7; --muted: #9ea3b8; --line: #252838;
+    --accent: #7f8bff; --accent-ink: #0b0c12; --hot: #ff7a5c; --term-bg: #05060a; --term-fg: #d9dcf0; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b0c12; --paper: #151722; --ink: #eef0f7; --muted: #9ea3b8; --line: #252838;
+  --accent: #7f8bff; --accent-ink: #0b0c12; --hot: #ff7a5c; --term-bg: #05060a; --term-fg: #d9dcf0; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+a { color: inherit; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.label { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+/* bar */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 14px; }
+.logo { font-family: var(--display); font-weight: 900; font-stretch: 125%; font-size: 18px; text-decoration: none; letter-spacing: -.01em; }
+.logo span { color: var(--accent); }
+nav { display: flex; gap: 24px; align-items: center; font-size: 15px; }
+nav a { text-decoration: none; color: var(--muted); }
+nav a:hover { color: var(--ink); }
+nav .talk { color: var(--accent-ink); background: var(--accent); padding: 8px 16px; border-radius: 999px; font-weight: 600; }
+@media (max-width: 680px) { nav a:not(.talk) { display: none; } }
+
+/* hero */
+.hero { padding-block: 56px 48px; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 40px; align-items: end; }
+@media (max-width: 880px) { .hero { grid-template-columns: 1fr; } }
+.switch { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 4px; background: var(--paper); margin-bottom: 24px; }
+.switch button { font: 600 14px var(--body); border: 0; background: transparent; color: var(--muted); padding: 7px 16px; border-radius: 999px; cursor: pointer; }
+.switch button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+h1 { font-family: var(--display); font-weight: 850; font-stretch: 112%; font-size: clamp(40px, 7.4vw, 92px); line-height: .96; letter-spacing: -.03em; margin: 0; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--accent); }
+h1 .scribble { position: relative; white-space: nowrap; }
+h1 .scribble::after { content: ""; position: absolute; left: 0; right: 0; bottom: .02em; height: .12em; background: var(--hot); border-radius: 4px; transform: rotate(-1.2deg); z-index: -1; }
+.lede { margin: 24px 0 0; max-width: 56ch; font-size: 19px; color: var(--muted); }
+.who { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { font-size: 13px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); }
+.pill.go { background: var(--hot); color: #fff; border-color: transparent; font-weight: 600; }
+
+.term { background: var(--term-bg); color: var(--term-fg); border-radius: 14px; font-family: var(--mono); font-size: 13px; line-height: 1.7; overflow: hidden; min-width: 0; box-shadow: 0 30px 60px -30px rgba(16,17,25,.45); }
+.term-top { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid #ffffff14; }
+.term-top i { width: 10px; height: 10px; border-radius: 50%; background: #ffffff2a; }
+.term pre { margin: 0; padding: 16px 18px 20px; white-space: pre-wrap; word-break: break-word; font: inherit; }
+.term .c { color: #8f95b2; }
+.term .p { color: #9aa4ff; }
+.term .ok { color: #7fe0b0; }
+.term .w { color: #ffb38f; }
+.cursor { display: inline-block; width: 8px; height: 15px; background: var(--term-fg); vertical-align: -2px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cursor { animation: none; } html { scroll-behavior: auto; } }
+
+/* marquee strip */
+.strip { border-block: 1px solid var(--line); background: var(--paper); overflow: hidden; }
+.strip .wrap { display: flex; flex-wrap: wrap; gap: 10px 32px; padding-block: 14px; font-family: var(--display); font-stretch: 125%; font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: .02em; }
+.strip span::before { content: "✦"; color: var(--accent); margin-right: 10px; }
+
+/* sections */
+section { padding-block: 72px 24px; }
+.sec-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px 32px; margin-bottom: 32px; }
+h2 { font-family: var(--display); font-weight: 850; font-stretch: 112%; font-size: clamp(32px, 4.6vw, 52px); line-height: 1; letter-spacing: -.02em; margin: 6px 0 0; text-wrap: balance; }
+.sec-head p { margin: 0; max-width: 44ch; color: var(--muted); }
+
+/* case studies */
+.case { border-top: 2px solid var(--ink); padding-block: 28px 36px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 24px 48px; }
+@media (max-width: 860px) { .case { grid-template-columns: 1fr; } }
+.case-id { display: grid; gap: 10px; align-content: start; }
+.case h3 { font-family: var(--display); font-weight: 800; font-stretch: 105%; font-size: clamp(24px, 3vw, 32px); line-height: 1.08; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.case-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-family: var(--mono); font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: var(--paper); border: 1px solid var(--line); }
+.tag.live { background: var(--hot); color: #fff; border-color: transparent; }
+.tag.side { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.case dl { margin: 0; display: grid; gap: 14px; }
+.case dl div { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 16px; }
+@media (max-width: 480px) { .case dl div { grid-template-columns: 1fr; gap: 2px; } }
+.case dt { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); padding-top: 4px; }
+.case dd { margin: 0; }
+.big-num { font-family: var(--display); font-weight: 850; font-stretch: 112%; font-size: 40px; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.big-num small { display: block; font: 500 13px var(--body); color: var(--muted); letter-spacing: 0; margin-top: 6px; }
+.nums { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 6px; }
+
+/* builder mode: highlight how things were built */
+body[data-mode="builder"] .case dt.build { background: var(--accent); color: var(--accent-ink); border-radius: 4px; padding: 4px 6px 2px; align-self: start; }
+body[data-mode="strategist"] .case dt.insight { background: var(--accent); color: var(--accent-ink); border-radius: 4px; padding: 4px 6px 2px; align-self: start; }
+
+/* process */
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .steps { grid-template-columns: 1fr; } }
+.step { background: var(--paper); border-radius: 14px; padding: 22px; min-width: 0; }
+.step b { font-family: var(--mono); font-size: 12px; color: var(--accent); font-weight: 500; }
+.step h3 { font-family: var(--display); font-stretch: 112%; font-weight: 800; font-size: 22px; margin: 8px 0 6px; }
+.step p { margin: 0; font-size: 15px; color: var(--muted); }
+
+/* toolkit */
+.kit { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+@media (max-width: 760px) { .kit { grid-template-columns: 1fr; } }
+.kit div { min-width: 0; }
+.kit h3 { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 500; color: var(--muted); margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.kit ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.hd { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-left: 4px; }
+
+/* leadership */
+.roles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .roles { grid-template-columns: 1fr; } }
+.role { border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.role h3 { font-family: var(--display); font-weight: 800; font-size: 19px; margin: 0; line-height: 1.2; }
+.role .org { font-size: 14px; color: var(--muted); }
+.role p { margin: 0; font-size: 15px; }
+.role .stat { font-family: var(--display); font-stretch: 112%; font-weight: 850; font-size: 26px; color: var(--accent); line-height: 1.1; }
+
+/* contact */
+.contact { margin-top: 72px; background: var(--accent); color: var(--accent-ink); }
+.contact .wrap { padding-block: 64px; display: grid; gap: 20px; }
+.contact h2 { font-size: clamp(36px, 6.4vw, 80px); margin: 0; }
+.contact p { margin: 0; max-width: 56ch; font-size: 18px; }
+.contact-row { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; font-size: 16px; }
+.email { font-family: var(--mono); user-select: all; background: var(--accent-ink); color: var(--accent); padding: 8px 14px; border-radius: 8px; }
+.copy { font: 600 14px var(--body); border: 1px solid currentColor; background: transparent; color: inherit; padding: 8px 14px; border-radius: 999px; cursor: pointer; }
+.contact a { font-weight: 600; }
+footer { padding-block: 24px 40px; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="logo" href="#top">TRI LE<span>.</span></a>
+    <nav>
+      <a href="#work">Work</a>
+      <a href="#process">How I work</a>
+      <a href="#toolkit">Toolkit</a>
+      <a href="cv.pdf" target="_blank" rel="noopener">CV</a>
+      <a class="talk" href="#contact">Let's talk</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div>
+      <div class="switch" role="group" aria-label="View as">
+        <button type="button" id="mode-strategist" aria-pressed="true" data-mode="strategist">Strategist</button>
+        <button type="button" id="mode-builder" aria-pressed="false" data-mode="builder">Builder</button>
+      </div>
+      <h1 id="headline">I find the <em>insight</em> hiding in the <span class="scribble">comment section.</span></h1>
+      <p class="lede" id="lede">Le Thanh Tri (Hayden). Commerce and IT student at Monash, aiming for strategy and digital roles at creative agencies. I study how people in Vietnam talk about brands online, then turn it into ideas a team can act on.</p>
+      <div class="who">
+        <span class="pill go">Available in HCMC from Nov 2026</span>
+        <span class="pill">Social listening</span>
+        <span class="pill">Python · R · SQL</span>
+        <span class="pill">Vietnamese &amp; English</span>
+      </div>
+    </div>
+    <div class="term" aria-label="Example terminal output from the MILO listening project">
+      <div class="term-top"><i></i><i></i><i></i></div>
+<pre><span class="c"># current side project</span>
+<span class="p">$</span> python milo_listening.py --campaign "BA CODES OF LOVE"
+<span class="ok">✓</span> brands: MILO, Ovaltine, Vinamilk
+<span class="ok">✓</span> source: YouTube comments + manual CSV
+<span class="ok">✓</span> tagging: theme, sentiment
+<span class="w">…</span> collecting data, deck coming soon
+<span class="p">$</span> <span class="cursor"></span></pre>
+    </div>
+  </div>
+
+  <div class="strip" aria-hidden="true">
+    <div class="wrap">
+      <span>Social listening</span><span>Competitor analysis</span><span>Insight decks</span><span>Python</span><span>Data storytelling</span><span>AI tools</span>
+    </div>
+  </div>
+
+  <section id="work">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label">Selected work</span><h2>Case studies</h2></div>
+        <p>Each one written the way an agency brief is: what was asked, what I found, what I built.</p>
+      </div>
+
+      <article class="case">
+        <div class="case-id">
+          <span class="label">01 · Personal project · 2026</span>
+          <h3>Nestlé MILO "BA CODES OF LOVE": campaign listening</h3>
+          <div class="case-meta"><span class="tag live">In progress</span><span class="tag">Ogilvy Vietnam campaign</span><span class="tag side">Python</span></div>
+        </div>
+        <dl>
+          <div><dt>Brief</dt><dd>How did Vietnamese audiences respond to MILO's Father's Day 2026 campaign, and how does that compare with Ovaltine and Vinamilk?</dd></div>
+          <div><dt class="build">Build</dt><dd>A Python script that pulls public YouTube comments through the YouTube Data API, merges hand-collected comments, and tags each one by theme and sentiment, using keywords or Claude.</dd></div>
+          <div><dt class="insight">Insight</dt><dd>What families actually say about the "codes of love" between fathers and kids, and where competitors own the conversation instead.</dd></div>
+          <div><dt>Output</dt><dd>An 8-slide insight deck with charts and recommended next moves. Results will be posted here once collection is done.</dd></div>
+        </dl>
+      </article>
+
+      <article class="case">
+        <div class="case-id">
+          <span class="label">02 · Work · Galaxy English Education Centre · 2023–24</span>
+          <h3>Running social and reading the competition</h3>
+          <div class="case-meta"><span class="tag">Social media</span><span class="tag">Competitor analysis</span><span class="tag side">Excel</span></div>
+        </div>
+        <dl>
+          <div><dt>Brief</dt><dd>Grow enquiries for a local English centre in a crowded market.</dd></div>
+          <div><dt class="build">Build</dt><dd>An Excel tracker for reach, comments and enquiries from every post, plus a benchmark of local competitors' pricing, positioning, promotions and social content.</dd></div>
+          <div><dt class="insight">Insight</dt><dd>Reported which posts performed so each round of content was shaped by the last one.</dd></div>
+          <div><dt>Output</dt><dd>A recommendations report management used to plan pricing and campaigns.</dd></div>
+        </dl>
+      </article>
+
+      <article class="case">
+        <div class="case-id">
+          <span class="label">03 · University · 2025</span>
+          <h3>Consumer Segmentation &amp; Insight</h3>
+          <div class="case-meta"><span class="tag">Audience segmentation</span><span class="tag side">R</span></div>
+        </div>
+        <dl>
+          <div><dt>Brief</dt><dd>Find which consumer groups drive behaviour in a large dataset.</dd></div>
+          <div><dt class="build">Build</dt><dd>Cleaned and analysed the data in R, segmenting audiences by demographic and product variables.</dd></div>
+          <div><dt>Output</dt><dd>Clear charts that non-technical readers could follow.
+            <div class="nums"><div class="big-num">9,134<small>consumer records</small></div><div class="big-num">18<small>variables</small></div></div>
+          </dd></div>
+        </dl>
+      </article>
+
+      <article class="case">
+        <div class="case-id">
+          <span class="label">04 · University · 2026</span>
+          <h3>StatDoctor Shift Discovery Platform</h3>
+          <div class="case-meta"><span class="tag">Product planning</span><span class="tag side">Agile</span><span class="tag side">EVM</span></div>
+        </div>
+        <dl>
+          <div><dt>Brief</dt><dd>Plan a shift discovery feed for a health-tech platform connecting 450+ doctors with 50 hospitals.</dd></div>
+          <div><dt class="insight">Insight</dt><dd>Mapped what doctors and hospitals each needed into requirements and a 10-sprint delivery plan.</dd></div>
+          <div><dt class="build">Build</dt><dd>As Financial and Feasibility Lead, built the cost baseline with 20% contingency and set CPI/SPI thresholds to flag risk each sprint.
+            <div class="nums"><div class="big-num">AUD 239,109<small>cost baseline</small></div><div class="big-num">10<small>sprints</small></div></div>
+          </dd></div>
+        </dl>
+      </article>
+
+      <article class="case">
+        <div class="case-id">
+          <span class="label">05 · University · 2025</span>
+          <h3>G8 Education valuation: the numbers side</h3>
+          <div class="case-meta"><span class="tag">Equity research</span><span class="tag side">Excel · DCF</span></div>
+        </div>
+        <dl>
+          <div><dt>Brief</dt><dd>Is ASX-listed childcare operator G8 Education fairly priced?</dd></div>
+          <div><dt class="build">Build</dt><dd>Five years of ratio analysis against peers, a three-scenario forecast, CAPM and a DCF model, plus a climate-risk review.</dd></div>
+          <div><dt>Output</dt><dd>A business case that shows I can back creative thinking with commercial numbers.
+            <div class="nums"><div class="big-num">A$2.30<small>DCF value per share</small></div><div class="big-num">A$0.66<small>market price at the time</small></div></div>
+          </dd></div>
+        </dl>
+      </article>
+    </div>
+  </section>
+
+  <section id="process">
+    <div class="wrap">
+      <div class="sec-head"><div><span class="label">How I work</span><h2>Listen, find, build, tell</h2></div></div>
+      <div class="steps">
+        <div class="step"><b>Step 1</b><h3>Listen</h3><p>Collect what people really say: comments, reviews, competitor posts.</p></div>
+        <div class="step"><b>Step 2</b><h3>Find</h3><p>Clean and tag the data until a pattern or tension stands out.</p></div>
+        <div class="step"><b>Step 3</b><h3>Build</h3><p>Use Python, Sheets or AI tools to make the analysis repeatable.</p></div>
+        <div class="step"><b>Step 4</b><h3>Tell</h3><p>Turn it into a short deck a client or creative team can act on.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="toolkit">
+    <div class="wrap">
+      <div class="sec-head"><div><span class="label">Toolkit</span><h2>Strategy brain, builder hands</h2></div></div>
+      <div class="kit">
+        <div>
+          <h3>Strategy &amp; content</h3>
+          <ul>
+            <li>Social listening and competitor analysis</li>
+            <li>Insight reports and strategy decks</li>
+            <li>Google Slides, PowerPoint</li>
+            <li>Keen follower of digital campaigns, social trends and martech</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Tech &amp; data</h3>
+          <ul>
+            <li>Python, R, SQL</li>
+            <li>Excel and Google Sheets (pivot tables, XLOOKUP, charts)</li>
+            <li>AI tools (ChatGPT, Claude) for research and summarising</li>
+            <li>HTML and CSS: I built this site</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Selected Monash units</h3>
+          <ul>
+            <li>Introduction to Management<span class="hd">HD</span></li>
+            <li>Programming Fundamentals in Java<span class="hd">HD</span></li>
+            <li>Computer Systems, Networks &amp; Security<span class="hd">HD</span></li>
+            <li>Introduction to Data Analysis</li>
+            <li>Web Fundamentals</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="leadership">
+    <div class="wrap">
+      <div class="sec-head"><div><span class="label">Beyond class</span><h2>Leadership</h2></div></div>
+      <div class="roles">
+        <article class="role">
+          <span class="label">10.2026 – Present</span>
+          <h3>National Publications Director</h3>
+          <div class="org">Lantern Consulting (Asia-Australia Youth Association)</div>
+          <p>Take industry reports and thought leadership from research brief to release, working with the Design and Sponsorship teams.</p>
+        </article>
+        <article class="role">
+          <span class="label">12.2024 – 08.2025</span>
+          <h3>Publication Officer</h3>
+          <div class="org">University Network for Investment and Trading, Monash</div>
+          <div class="stat">1,000+ readers</div>
+          <p>Ran a weekly publication with 5 to 8 contributors for 8 months without missing a deadline.</p>
+        </article>
+        <article class="role">
+          <span class="label">07.2024 – 06.2026</span>
+          <h3>Human Resources Officer</h3>
+          <div class="org">Monash Vietnamese International Student Club (MVISC)</div>
+          <div class="stat">AUD 12,000+</div>
+          <p>Raised in sponsorship, 2% above target, then led 5 volunteers to deliver a 200-guest charity night.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <div class="contact" id="contact">
+    <div class="wrap">
+      <span class="label" style="color:inherit;opacity:.8">Contact</span>
+      <h2>Got a brief? Let's talk.</h2>
+      <p>I'm looking for strategy, digital and social internships at creative agencies in Ho Chi Minh City, full-time from November 2026.</p>
+      <div class="contact-row">
+        <span class="email" id="email">trile120105@gmail.com</span>
+        <button type="button" class="copy" id="copy-email">Copy email</button>
+        <a href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/" target="_blank" rel="noopener">GitHub</a>
+        <a href="cv.pdf" target="_blank" rel="noopener">CV (PDF)</a>
+      </div>
+    </div>
+  </div>
+</main>
+<footer><div class="wrap">Designed and coded by Le Thanh Tri · Ho Chi Minh City · Melbourne</div></footer>
+
+<script>
+(function () {
+  var copy = {
+    strategist: {
+      h: 'I find the <em>insight</em> hiding in the <span class="scribble">comment section.</span>',
+      l: "Le Thanh Tri (Hayden). Commerce and IT student at Monash, aiming for strategy and digital roles at creative agencies. I study how people in Vietnam talk about brands online, then turn it into ideas a team can act on."
+    },
+    builder: {
+      h: 'Then I write the <em>code</em> that <span class="scribble">proves it.</span>',
+      l: "On the IT side of my degree I write Python, R and SQL. I use them, plus AI tools, to collect and tag social data at scale, so an insight comes from thousands of comments instead of a hunch."
+    }
+  };
+  var h = document.getElementById("headline"), l = document.getElementById("lede");
+  document.body.dataset.mode = "strategist";
+  document.querySelectorAll(".switch button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var m = b.dataset.mode;
+      document.body.dataset.mode = m;
+      document.querySelectorAll(".switch button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      h.innerHTML = copy[m].h; l.textContent = copy[m].l;
+    });
+  });
+  var btn = document.getElementById("copy-email"), email = document.getElementById("email");
+  btn.addEventListener("click", function () {
+    var done = function () { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy email"; }, 1600); };
+    var fallback = function () { var r = document.createRange(); r.selectNodeContents(email); var s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+    if (navigator.clipboard) navigator.clipboard.writeText(email.textContent).then(done, fallback); else fallback();
+  });
+})();
+</script>
+</body>
+</html>

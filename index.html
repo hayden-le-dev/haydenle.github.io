@@ -1,1 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hayden Le Drive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-screen three.js world (single committed look). HUD floats on top: logo + skip button top, zone shortcuts bottom, case-study panel slides in from the right, intro card on load. */
+:root {
+  --ink: #101119;
+  --paper: #ffffff;
+  --soft: #f1f2f6;
+  --muted: #5b5f70;
+  --line: #e0e2ea;
+  --accent: #2f3cf5;
+  --hot: #ff5a36;
+  --display: "Archivo", "Arial Black", system-ui, sans-serif;
+  --body: "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: #dfe2ee; color: var(--ink); font-family: var(--body); overflow: hidden; -webkit-user-select: none; user-select: none; }
+#world { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; }
+button { font: inherit; cursor: pointer; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
+.hud-top { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; z-index: 3; pointer-events: none;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); }
+.hud-top > * { pointer-events: auto; }
+.logo { font-family: var(--display); font-weight: 900; font-stretch: 125%; font-size: 18px; color: var(--ink); background: var(--paper); padding: 8px 14px; border-radius: 999px; box-shadow: 0 6px 20px -8px #10111955; }
+.logo span { color: var(--hot); }
+.skip { text-decoration: none; background: var(--ink); color: #fff; font-weight: 600; font-size: 14px; padding: 10px 16px; border-radius: 999px; box-shadow: 0 6px 20px -8px #10111988; white-space: nowrap; }
+
+.hud-bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; display: grid; gap: 8px; justify-items: center; pointer-events: none;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 14px) max(16px, env(safe-area-inset-left, 0px)); }
+.hint { font-family: var(--mono); font-size: 12px; background: #ffffffd9; padding: 6px 12px; border-radius: 999px; color: var(--muted); }
+.jump { pointer-events: auto; display: flex; gap: 6px; max-width: 100%; overflow-x: auto; padding: 6px; background: #ffffffd9; border-radius: 999px; scrollbar-width: none; }
+.jump::-webkit-scrollbar { display: none; }
+.jump button { border: 0; background: transparent; color: var(--ink); font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; white-space: nowrap; }
+.jump button:hover, .jump button.on { background: var(--accent); color: #fff; }
+
+/* case-study panel */
+.panel { position: fixed; z-index: 4; top: 0; right: 0; bottom: 0; width: min(440px, 100%); background: var(--paper); box-shadow: -20px 0 60px -30px #10111988; transform: translateX(105%); transition: transform .35s cubic-bezier(.2,.8,.2,1); display: flex; flex-direction: column;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); -webkit-user-select: text; user-select: text; }
+.panel.open { transform: none; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px 0; }
+.label { font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.close { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; color: var(--ink); }
+.panel-body { overflow-y: auto; padding: 10px 22px 28px; display: grid; gap: 16px; align-content: start; }
+.panel h2 { font-family: var(--display); font-weight: 850; font-stretch: 110%; font-size: 30px; line-height: 1.05; letter-spacing: -.015em; margin: 0; text-wrap: balance; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-family: var(--mono); font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: var(--soft); border: 1px solid var(--line); }
+.tag.live { background: var(--hot); border-color: transparent; color: #fff; }
+.panel dl { margin: 0; display: grid; gap: 12px; }
+.panel dt { font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.panel dd { margin: 2px 0 0; font-size: 15.5px; line-height: 1.55; }
+.panel p { margin: 0; font-size: 15.5px; line-height: 1.55; }
+.nums { display: flex; flex-wrap: wrap; gap: 24px; }
+.num { font-family: var(--display); font-weight: 850; font-stretch: 110%; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
+.num small { display: block; font: 500 12.5px var(--body); color: var(--muted); margin-top: 4px; }
+.panel ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 15px; }
+.role { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 4px; }
+.role b { font-family: var(--display); font-size: 17px; }
+.role span { font-size: 14px; color: var(--muted); }
+.email { font-family: var(--mono); background: var(--soft); padding: 8px 12px; border-radius: 8px; -webkit-user-select: all; user-select: all; word-break: break-all; }
+.btn { display: inline-block; text-decoration: none; border: 0; background: var(--accent); color: #fff; font-weight: 600; font-size: 14px; padding: 9px 16px; border-radius: 999px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* intro */
+.intro { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; background: #10111966; padding: 16px; }
+.intro[hidden] { display: none !important; }
+.card { background: var(--paper); border-radius: 20px; width: min(480px, 100%); padding: 28px; display: grid; gap: 14px; box-shadow: 0 40px 80px -30px #000a; }
+.card h1 { font-family: var(--display); font-weight: 900; font-stretch: 125%; font-size: clamp(34px, 9vw, 48px); line-height: .95; margin: 0; letter-spacing: -.02em; }
+.card h1 span { color: var(--hot); }
+.card p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.55; }
+.keys { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 6px; padding: 2px 7px; color: var(--ink); background: var(--soft); }
+.card .row .ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+
+/* touch joystick */
+.stick { position: fixed; z-index: 3; left: max(20px, env(safe-area-inset-left, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); width: 120px; height: 120px; border-radius: 50%; background: #ffffff8c; border: 2px solid #ffffffcc; display: none; touch-action: none; }
+.stick i { position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px; border-radius: 50%; background: var(--accent); box-shadow: 0 6px 16px -6px #2f3cf5aa; }
+.touch .stick { display: block; }
+.touch .hint { display: none; }
+
+.fail { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: #dfe2ee; z-index: 6; text-align: center; }
+@media (prefers-reduced-motion: reduce) { .panel { transition: none; } }
+</style>
+</head>
+<body>
+
+<canvas id="world" aria-label="3D world: drive a car to project zones"></canvas>
+
+<div class="hud-top">
+  <div class="logo">HAYDEN LE<span>.</span></div>
+  <a class="skip" href="classic.html">Skip to normal site →</a>
+</div>
+
+<div class="hud-bottom">
+  <div class="hint">WASD or arrow keys to drive · Space to brake · drive onto a glowing pad</div>
+  <nav class="jump" id="jump" aria-label="Jump to a zone"></nav>
+</div>
+
+<div class="stick" id="stick" aria-hidden="true"><i id="knob"></i></div>
+
+<aside class="panel" id="panel" aria-live="polite">
+  <div class="panel-head"><span class="label" id="p-label"></span><button type="button" class="close" id="p-close">Close · Esc</button></div>
+  <div class="panel-body" id="p-body"></div>
+</aside>
+
+<div class="intro" id="intro">
+  <div class="card">
+    <span class="label">Commerce (Finance) + IT · Monash</span>
+    <h1>HAYDEN LE<span>.</span></h1>
+    <p>Insight-led strategy, built with code. This portfolio is a small world: drive to each glowing pad to open a case study.</p>
+    <div class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows to drive, <kbd>Space</kbd> to brake. On a phone, use the joystick.</div>
+    <div class="row">
+      <button type="button" class="btn" id="start">Start driving</button>
+      <a class="btn ghost" href="classic.html">Skip to normal site</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var COBALT = 0x2f3cf5, CORAL = 0xff5a36, INK = 0x101119, GROUND = 0xdfe2ee, WHITE = 0xffffff, GREY = 0xb9bdcc;
+
+  // ---------- content ----------
+  var ZONES = [
+    { id: "milo", chip: "MILO listening", sign: ["MILO", "campaign listening"], label: "Case study 01 · 2026", color: CORAL, html:
+      '<h2>Nestlé MILO "BA CODES OF LOVE": campaign listening</h2>' +
+      '<div class="tags"><span class="tag live">In progress</span><span class="tag">Ogilvy Vietnam campaign</span><span class="tag">Python</span></div>' +
+      '<dl><div><dt>Brief</dt><dd>How did Vietnamese audiences respond to MILO\'s Father\'s Day 2026 campaign, and how does that compare with Ovaltine and Vinamilk?</dd></div>' +
+      '<div><dt>Build</dt><dd>A Python script that pulls public YouTube comments through the YouTube Data API, merges hand-collected comments, and tags each one by theme and sentiment, using keywords or Claude.</dd></div>' +
+      '<div><dt>Insight</dt><dd>What families actually say about the "codes of love" between fathers and kids, and where competitors own the conversation instead.</dd></div>' +
+      '<div><dt>Output</dt><dd>An 8-slide insight deck with charts and recommended next moves. Results will be posted here once collection is done.</dd></div></dl>' },
+    { id: "galaxy", chip: "Social & competitors", sign: ["GALAXY", "social + competitors"], label: "Work · 2023–24", color: COBALT, html:
+      '<h2>Running social and reading the competition</h2>' +
+      '<div class="tags"><span class="tag">Galaxy English Education Centre</span><span class="tag">Operations Intern</span><span class="tag">Excel</span></div>' +
+      '<dl><div><dt>Brief</dt><dd>Grow enquiries for a local English centre in a crowded market.</dd></div>' +
+      '<div><dt>Build</dt><dd>An Excel tracker for reach, comments and enquiries from every post, plus a benchmark of local competitors\' pricing, positioning, promotions and social content.</dd></div>' +
+      '<div><dt>Insight</dt><dd>Reported which posts performed so each round of content was shaped by the last one.</dd></div>' +
+      '<div><dt>Output</dt><dd>A recommendations report management used to plan pricing and campaigns.</dd></div></dl>' },
+    { id: "seg", chip: "Segmentation", sign: ["SEGMENTS", "consumer insight · R"], label: "University · 2025", color: COBALT, html:
+      '<h2>Consumer Segmentation &amp; Insight</h2>' +
+      '<div class="tags"><span class="tag">Audience segmentation</span><span class="tag">R</span></div>' +
+      '<dl><div><dt>Brief</dt><dd>Find which consumer groups drive behaviour in a large dataset.</dd></div>' +
+      '<div><dt>Build</dt><dd>Cleaned and analysed the data in R, segmenting audiences by demographic and product variables.</dd></div>' +
+      '<div><dt>Output</dt><dd>Clear charts that non-technical readers could follow.</dd></div></dl>' +
+      '<div class="nums"><div class="num">9,134<small>consumer records</small></div><div class="num">18<small>variables</small></div></div>' },
+    { id: "stat", chip: "StatDoctor", sign: ["STATDOCTOR", "shift discovery platform"], label: "University · 2026", color: COBALT, html:
+      '<h2>StatDoctor Shift Discovery Platform</h2>' +
+      '<div class="tags"><span class="tag">Product planning</span><span class="tag">Hybrid Agile</span><span class="tag">EVM</span></div>' +
+      '<dl><div><dt>Brief</dt><dd>Plan a shift discovery feed for a health-tech platform connecting 450+ doctors with 50 hospitals.</dd></div>' +
+      '<div><dt>Insight</dt><dd>Mapped what doctors and hospitals each needed into requirements and a 10-sprint delivery plan.</dd></div>' +
+      '<div><dt>Build</dt><dd>As Financial and Feasibility Lead, built the cost baseline with 20% contingency and set CPI/SPI thresholds to flag risk each sprint.</dd></div></dl>' +
+      '<div class="nums"><div class="num">AUD 239,109<small>cost baseline</small></div><div class="num">10<small>sprints</small></div></div>' },
+    { id: "g8", chip: "G8 valuation", sign: ["G8 VALUATION", "the numbers side"], label: "University · 2025", color: CORAL, html:
+      '<h2>G8 Education valuation: the numbers side</h2>' +
+      '<div class="tags"><span class="tag">Equity research</span><span class="tag">Excel</span><span class="tag">DCF</span></div>' +
+      '<dl><div><dt>Brief</dt><dd>Is ASX-listed childcare operator G8 Education fairly priced?</dd></div>' +
+      '<div><dt>Build</dt><dd>Five years of ratio analysis against peers, a three-scenario forecast, CAPM and a DCF model, plus a climate-risk review.</dd></div>' +
+      '<div><dt>Output</dt><dd>A business case that shows I can back creative thinking with commercial numbers. The two bars in this zone are the result.</dd></div></dl>' +
+      '<div class="nums"><div class="num">A$2.30<small>DCF value per share</small></div><div class="num">A$0.66<small>market price at the time</small></div></div>' },
+    { id: "lead", chip: "Leadership", sign: ["LEADERSHIP", "beyond class"], label: "Beyond class", color: COBALT, html:
+      '<h2>Leadership</h2>' +
+      '<div class="role"><b>National Publications Director</b><span>Lantern Consulting (Asia-Australia Youth Association) · 10.2026 – Present</span><p>Take industry reports and thought leadership from research brief to release, working with the Design and Sponsorship teams.</p></div>' +
+      '<div class="role"><b>Publication Officer</b><span>University Network for Investment and Trading, Monash · 12.2024 – 08.2025</span><p>Ran a weekly publication for 1,000+ readers with 5 to 8 contributors, 8 months without missing a deadline.</p></div>' +
+      '<div class="role"><b>Human Resources Officer</b><span>Monash Vietnamese International Student Club (MVISC) · 07.2024 – 06.2026</span><p>Raised AUD 12,000+ in sponsorship, 2% above target, then led 5 volunteers to deliver a 200-guest charity night.</p></div>' },
+    { id: "kit", chip: "Toolkit", sign: ["TOOLKIT", "strategy brain, builder hands"], label: "Skills", color: CORAL, html:
+      '<h2>Strategy brain, builder hands</h2>' +
+      '<div><span class="label">Strategy &amp; content</span><ul><li>Social listening and competitor analysis</li><li>Insight reports and strategy decks (Google Slides, PowerPoint)</li><li>Keen follower of digital campaigns, social trends and martech</li></ul></div>' +
+      '<div><span class="label">Tech &amp; data</span><ul><li>Python, R, SQL</li><li>Excel and Google Sheets (pivot tables, XLOOKUP, charts)</li><li>AI tools (ChatGPT, Claude) for research and summarising</li><li>three.js and JavaScript: this world</li></ul></div>' +
+      '<div><span class="label">Selected Monash units</span><ul><li>Introduction to Management (HD)</li><li>Programming Fundamentals in Java (HD)</li><li>Computer Systems, Networks &amp; Security (HD)</li><li>Introduction to Data Analysis, Web Fundamentals</li></ul></div>' },
+    { id: "contact", chip: "Contact", sign: ["LET'S TALK", "got a brief?"], label: "Contact", color: CORAL, html:
+      '<h2>Got a brief? Let\'s talk.</h2>' +
+      '<p>I\'m looking for strategy, digital and social internships at creative agencies in Ho Chi Minh City, full-time from November 2026.</p>' +
+      '<div class="row"><span class="email" id="email">trile120105@gmail.com</span><button type="button" class="btn" id="copy">Copy email</button></div>' +
+      '<div class="row"><a class="btn" href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn</a><a class="btn" href="https://github.com/" target="_blank" rel="noopener">GitHub</a><a class="btn" href="cv.pdf" target="_blank" rel="noopener">CV (PDF)</a></div>' }
+  ];
+
+  // ---------- setup ----------
+  var canvas = document.getElementById("world");
+  var renderer;
+  try {
+    if (!window.THREE) throw new Error("no three");
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  } catch (e) {
+    var f = document.createElement("div");
+    f.className = "fail";
+    f.innerHTML = '<div class="card"><h1>HAYDEN LE<span>.</span></h1><p>Your browser can\'t show the 3D world. The normal site has all the same work.</p><div class="row"><a class="btn" href="classic.html">Open the normal site</a></div></div>';
+    document.body.appendChild(f);
+    return;
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xdfe2ee);
+  scene.fog = new THREE.Fog(0xdfe2ee, 55, 110);
+
+  var camera = new THREE.PerspectiveCamera(45, 1, 0.1, 300);
+  var CAM_OFFSET = new THREE.Vector3(0, 17, -17);
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa0bd, 0.7));
+  var sun = new THREE.DirectionalLight(0xffffff, 0.85);
+  sun.position.set(-18, 30, -10);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  var sc = sun.shadow.camera; sc.left = -30; sc.right = 30; sc.top = 30; sc.bottom = -30; sc.near = 1; sc.far = 90;
+  sun.shadow.bias = -0.0005;
+  scene.add(sun); scene.add(sun.target);
+
+  function mat(c, o) { return new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.85, metalness: 0 }, o || {})); }
+  function mesh(g, m, cast) { var x = new THREE.Mesh(g, m); x.castShadow = cast !== false; x.receiveShadow = true; return x; }
+
+  // ground
+  var WORLD_R = 48;
+  var ground = mesh(new THREE.CircleGeometry(WORLD_R + 6, 64), mat(GROUND), false);
+  ground.rotation.x = -Math.PI / 2; scene.add(ground);
+  var grid = new THREE.GridHelper(110, 55, 0xcfd3e4, 0xd9dcea);
+  grid.position.y = 0.01; scene.add(grid);
+  var edge = mesh(new THREE.TorusGeometry(WORLD_R + 1, 0.35, 8, 96), mat(COBALT), false);
+  edge.rotation.x = Math.PI / 2; edge.position.y = 0.2; scene.add(edge);
+
+  // seeded random so the world looks the same every visit
+  var seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+
+  // ---------- canvas text textures ----------
+  // every canvas texture is registered so it can be redrawn once the web fonts have loaded
+  var drawn = [];
+  function canvasTexture(w, h, draw) {
+    var c = document.createElement("canvas"); c.width = w; c.height = h;
+    draw(c.getContext("2d"));
+    var t = new THREE.CanvasTexture(c); t.anisotropy = 8;
+    drawn.push({ c: c, draw: draw, t: t });
+    return t;
+  }
+  function signTexture(title, sub, accent) {
+    return canvasTexture(1024, 512, function (x) {
+      x.clearRect(0, 0, 1024, 512);
+      x.fillStyle = "#ffffff"; x.fillRect(0, 0, 1024, 512);
+      x.fillStyle = accent; x.fillRect(0, 0, 1024, 26);
+      x.fillStyle = "#101119";
+      var size = 150; x.font = "900 " + size + "px Archivo, 'Arial Black', sans-serif";
+      while (x.measureText(title).width > 900 && size > 60) { size -= 6; x.font = "900 " + size + "px Archivo, 'Arial Black', sans-serif"; }
+      x.textBaseline = "alphabetic"; x.fillText(title, 56, 270);
+      x.fillStyle = "#5b5f70"; x.font = "500 44px 'IBM Plex Mono', monospace"; x.fillText(sub.toUpperCase(), 60, 360);
+      x.fillStyle = accent; x.beginPath(); x.arc(946, 440, 22, 0, Math.PI * 2); x.fill();
+    });
+  }
+  function hexStr(n) { return "#" + n.toString(16).padStart(6, "0"); }
+
+  function billboard(title, sub, accent, w, h) {
+    var g = new THREE.Group();
+    var board = mesh(new THREE.BoxGeometry(w, h, 0.25), [mat(WHITE), mat(WHITE), mat(WHITE), mat(WHITE), mat(WHITE, { map: signTexture(title, sub, hexStr(accent)) }), mat(WHITE)]);
+    // front face (+z, index 4) carries the texture; turn the group so it faces the camera (-z)
+    board.position.y = h / 2 + 1.4; g.add(board);
+    [-w / 2 + 0.5, w / 2 - 0.5].forEach(function (px) {
+      var post = mesh(new THREE.BoxGeometry(0.25, 1.6, 0.25), mat(INK)); post.position.set(px, 0.8, 0); g.add(post);
+    });
+    g.rotation.y = Math.PI;
+    return g;
+  }
+
+  // ---------- zones ----------
+  var RING = 24;
+  var pads = [];
+  var bobbers = [];
+  ZONES.forEach(function (z, i) {
+    var a = (i / ZONES.length) * Math.PI * 2 + Math.PI / ZONES.length;
+    var cx = Math.sin(a) * RING, cz = Math.cos(a) * RING;
+    z.x = cx; z.z = cz;
+    var group = new THREE.Group(); group.position.set(cx, 0, cz); scene.add(group);
+
+    var pad = mesh(new THREE.CylinderGeometry(3.2, 3.2, 0.12, 48), mat(z.color, { emissive: z.color, emissiveIntensity: 0.15 }), false);
+    pad.position.y = 0.06; group.add(pad);
+    var ring = new THREE.Mesh(new THREE.TorusGeometry(3.6, 0.08, 8, 64), new THREE.MeshBasicMaterial({ color: z.color, transparent: true, opacity: 0.8 }));
+    ring.rotation.x = Math.PI / 2; ring.position.y = 0.15; group.add(ring);
+    pads.push({ zone: z, ring: ring, pad: pad });
+
+    var bb = billboard(z.sign[0], z.sign[1], z.color, 7, 3.5);
+    bb.position.set(0, 0, 5); group.add(bb);
+
+    var d = new THREE.Group(); d.position.set(-5.6, 0, 3); group.add(d);
+    buildDecor(z.id, d);
+  });
+
+  function buildDecor(id, d) {
+    var i, m;
+    if (id === "milo") {
+      [[0, 1.6, CORAL], [1.4, 3.0, WHITE], [-0.6, 4.3, COBALT]].forEach(function (b, k) {
+        var bubble = new THREE.Group();
+        var body = mesh(new THREE.BoxGeometry(2.2, 1.2, 0.5), mat(b[2])); bubble.add(body);
+        var tail = mesh(new THREE.ConeGeometry(0.3, 0.6, 4), mat(b[2])); tail.position.set(-0.6, -0.8, 0); tail.rotation.z = Math.PI; bubble.add(tail);
+        for (var j = 0; j < 3; j++) { var dot = mesh(new THREE.SphereGeometry(0.13, 10, 8), mat(b[2] === WHITE ? INK : WHITE)); dot.position.set(-0.5 + j * 0.5, 0, 0.27); bubble.add(dot); }
+        bubble.position.set(b[0], b[1], 0); bubble.rotation.y = Math.PI; d.add(bubble);
+        bobbers.push({ o: bubble, base: b[1], phase: k * 1.3 });
+      });
+    } else if (id === "galaxy") {
+      for (i = 0; i < 3; i++) {
+        var phone = new THREE.Group();
+        var shell = mesh(new THREE.BoxGeometry(1.3, 2.4, 0.18), mat(INK)); phone.add(shell);
+        var screen = mesh(new THREE.BoxGeometry(1.1, 2.1, 0.02), mat([COBALT, CORAL, WHITE][i], { emissive: [COBALT, CORAL, 0xffffff][i], emissiveIntensity: 0.25 }), false);
+        screen.position.z = -0.1; phone.add(screen);
+        phone.position.set(-1.6 + i * 1.6, 1.25 + (i === 1 ? 0.4 : 0), 0); phone.rotation.y = Math.PI + (i - 1) * 0.25; d.add(phone);
+      }
+    } else if (id === "seg") {
+      [[COBALT, -1.4, 0], [CORAL, 1.2, -0.6], [GREY, 0, 1.6]].forEach(function (cl) {
+        for (var j = 0; j < 7; j++) {
+          var s = mesh(new THREE.SphereGeometry(0.35, 16, 12), mat(cl[0]));
+          s.position.set(cl[1] + (rnd() - 0.5) * 1.4, 0.35 + rnd() * 1.6, cl[2] + (rnd() - 0.5) * 1.4); d.add(s);
+        }
+      });
+    } else if (id === "stat") {
+      for (i = 0; i < 10; i++) {
+        var h = 0.35 + i * 0.32;
+        m = mesh(new THREE.BoxGeometry(0.42, h, 0.8), mat(i === 9 ? CORAL : COBALT)); m.position.set(2.2 - i * 0.48, h / 2, 0); d.add(m);
+      }
+    } else if (id === "g8") {
+      var k = 2.4;
+      m = mesh(new THREE.BoxGeometry(1.3, 0.66 * k, 1.3), mat(GREY)); m.position.set(0.9, 0.33 * k, 0); d.add(m);
+      m = mesh(new THREE.BoxGeometry(1.3, 2.30 * k, 1.3), mat(COBALT)); m.position.set(-0.9, 1.15 * k, 0); d.add(m);
+      var arrow = mesh(new THREE.ConeGeometry(0.5, 0.9, 4), mat(CORAL)); arrow.position.set(-0.9, 2.3 * k + 0.7, 0); d.add(arrow);
+      bobbers.push({ o: arrow, base: 2.3 * k + 0.7, phase: 0, spin: true });
+    } else if (id === "lead") {
+      [[0, 2.2], [-1.5, 1.5], [1.5, 1.1]].forEach(function (p) {
+        m = mesh(new THREE.BoxGeometry(1.4, p[1], 1.4), mat(WHITE)); m.position.set(p[0], p[1] / 2, 0); d.add(m);
+        var cap = mesh(new THREE.BoxGeometry(1.45, 0.15, 1.45), mat(p[1] > 2 ? CORAL : COBALT)); cap.position.set(p[0], p[1] + 0.07, 0); d.add(cap);
+      });
+      var star = mesh(new THREE.OctahedronGeometry(0.45), mat(CORAL)); star.position.set(0, 3.1, 0); d.add(star);
+      bobbers.push({ o: star, base: 3.1, phase: 0.5, spin: true });
+    } else if (id === "kit") {
+      ["Py", "R", "SQL", "AI"].forEach(function (t, j) {
+        var tex = canvasTexture(256, 256, function (x) {
+          x.fillStyle = j % 2 ? "#2f3cf5" : "#101119"; x.fillRect(0, 0, 256, 256);
+          x.fillStyle = "#ffffff"; x.font = "900 " + (t.length > 2 ? 92 : 120) + "px Archivo, 'Arial Black', sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(t, 128, 136);
+        });
+        var cube = mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), mat(WHITE, { map: tex }));
+        cube.position.set(j < 2 ? -0.7 + j * 1.4 : 0, j < 2 ? 0.6 : (j === 2 ? 1.8 : 3.0), j < 2 ? 0 : 0);
+        cube.rotation.y = Math.PI + (j - 1.5) * 0.2; d.add(cube);
+      });
+    } else if (id === "contact") {
+      var post = mesh(new THREE.BoxGeometry(0.25, 1.5, 0.25), mat(INK)); post.position.y = 0.75; d.add(post);
+      var box = mesh(new THREE.BoxGeometry(1.1, 0.9, 1.8), mat(CORAL)); box.position.y = 1.9; d.add(box);
+      var top = mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.8, 20, 1, false, 0, Math.PI), mat(CORAL)); top.rotation.z = Math.PI / 2; top.rotation.y = Math.PI / 2; top.position.y = 2.35; d.add(top);
+      var flag = mesh(new THREE.BoxGeometry(0.06, 0.8, 0.4), mat(COBALT)); flag.position.set(0.6, 2.6, 0.4); d.add(flag);
+    }
+  }
+
+  // welcome sign at spawn
+  var welcome = billboard("HAYDEN LE.", "drive to explore my work", CORAL, 9, 4.5);
+  welcome.position.set(0, 0, 8); scene.add(welcome);
+
+  // trees, kept away from zones and spawn
+  for (var t = 0; t < 46; t++) {
+    var ang = rnd() * Math.PI * 2, r = 10 + rnd() * (WORLD_R - 12);
+    var tx = Math.sin(ang) * r, tz = Math.cos(ang) * r, ok = Math.hypot(tx, tz - 8) > 6;
+    ZONES.forEach(function (z) { if (Math.hypot(tx - z.x, tz - z.z) < 9) ok = false; });
+    if (!ok) continue;
+    var tree = new THREE.Group();
+    var trunk = mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.8, 6), mat(INK)); trunk.position.y = 0.4; tree.add(trunk);
+    var hgt = 1.6 + rnd() * 1.6;
+    var top = mesh(new THREE.ConeGeometry(0.8 + rnd() * 0.3, hgt, 6), mat(rnd() > 0.75 ? CORAL : (rnd() > 0.5 ? COBALT : 0x8d96f7), { flatShading: true }));
+    top.position.y = 0.8 + hgt / 2; tree.add(top);
+    tree.position.set(tx, 0, tz); scene.add(tree);
+  }
+
+  // ---------- car ----------
+  var car = new THREE.Group(); scene.add(car);
+  var body = mesh(new THREE.BoxGeometry(1.8, 0.7, 3.2), mat(CORAL, { roughness: 0.5 })); body.position.y = 0.75; car.add(body);
+  var cabin = mesh(new THREE.BoxGeometry(1.5, 0.6, 1.6), mat(WHITE, { roughness: 0.4 })); cabin.position.set(0, 1.4, -0.2); car.add(cabin);
+  var glass = mesh(new THREE.BoxGeometry(1.52, 0.42, 0.05), mat(INK, { roughness: 0.2 }), false); glass.position.set(0, 1.42, 0.62); car.add(glass);
+  [-0.55, 0.55].forEach(function (x) { var l = mesh(new THREE.BoxGeometry(0.35, 0.18, 0.05), new THREE.MeshBasicMaterial({ color: 0xfff3c4 }), false); l.position.set(x, 0.85, 1.62); car.add(l); });
+  var wheels = [];
+  [[-0.95, 1.05], [0.95, 1.05], [-0.95, -1.05], [0.95, -1.05]].forEach(function (p) {
+    var w = new THREE.Group();
+    var tyre = mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.34, 16), mat(INK)); tyre.rotation.z = Math.PI / 2; w.add(tyre);
+    var hub = mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.36, 10), mat(WHITE)); hub.rotation.z = Math.PI / 2; w.add(hub);
+    w.position.set(p[0], 0.42, p[1]); car.add(w); wheels.push(w);
+  });
+
+  var state = { x: 0, z: 0, h: 0, v: 0, steer: 0 };
+
+  // ---------- input ----------
+  var keys = {};
+  var started = false;
+  addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { closePanel(); return; }
+    var k = e.key.toLowerCase();
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].indexOf(k) > -1) e.preventDefault();
+    keys[k] = true;
+    if (!started && ["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].indexOf(k) > -1) start();
+  });
+  addEventListener("keyup", function (e) { keys[e.key.toLowerCase()] = false; });
+  addEventListener("blur", function () { keys = {}; });
+
+  var joy = { x: 0, y: 0, id: null };
+  var stick = document.getElementById("stick"), knob = document.getElementById("knob");
+  if (window.matchMedia && matchMedia("(pointer: coarse)").matches) document.body.classList.add("touch");
+  function joyMove(e) {
+    var r = stick.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    var dx = e.clientX - cx, dy = e.clientY - cy, max = r.width / 2 - 10, len = Math.hypot(dx, dy);
+    if (len > max) { dx = dx / len * max; dy = dy / len * max; }
+    joy.x = dx / max; joy.y = dy / max;
+    knob.style.transform = "translate(" + dx + "px," + dy + "px)";
+  }
+  stick.addEventListener("pointerdown", function (e) { joy.id = e.pointerId; stick.setPointerCapture(e.pointerId); joyMove(e); if (!started) start(); });
+  stick.addEventListener("pointermove", function (e) { if (e.pointerId === joy.id) joyMove(e); });
+  function joyEnd() { joy.id = null; joy.x = joy.y = 0; knob.style.transform = ""; }
+  stick.addEventListener("pointerup", joyEnd); stick.addEventListener("pointercancel", joyEnd);
+
+  // ---------- UI ----------
+  var intro = document.getElementById("intro");
+  function start() { started = true; intro.hidden = true; canvas.focus && canvas.focus(); }
+  document.getElementById("start").addEventListener("click", start);
+
+  var panel = document.getElementById("panel"), pBody = document.getElementById("p-body"), pLabel = document.getElementById("p-label");
+  var openId = null;
+  var jump = document.getElementById("jump");
+  ZONES.forEach(function (z) {
+    var b = document.createElement("button"); b.type = "button"; b.textContent = z.chip; b.id = "jump-" + z.id;
+    b.addEventListener("click", function () {
+      start();
+      // park the car at the edge of the pad, facing it
+      var a = Math.atan2(z.x, z.z);
+      state.x = z.x - Math.sin(a) * 5; state.z = z.z - Math.cos(a) * 5; state.h = a; state.v = 0;
+      openPanel(z);
+    });
+    jump.appendChild(b); z.btn = b;
+  });
+  function openPanel(z) {
+    openId = z.id; pLabel.textContent = z.label; pBody.innerHTML = z.html; pBody.scrollTop = 0; panel.classList.add("open");
+    ZONES.forEach(function (o) { o.btn.classList.toggle("on", o === z); });
+    var cp = document.getElementById("copy");
+    if (cp) cp.addEventListener("click", function () {
+      var em = document.getElementById("email");
+      var done = function () { cp.textContent = "Copied"; setTimeout(function () { cp.textContent = "Copy email"; }, 1600); };
+      var sel = function () { var r = document.createRange(); r.selectNodeContents(em); var s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+      if (navigator.clipboard) navigator.clipboard.writeText(em.textContent).then(done, sel); else sel();
+    });
+  }
+  function closePanel() { panel.classList.remove("open"); openId = null; ZONES.forEach(function (o) { o.btn.classList.remove("on"); }); }
+  document.getElementById("p-close").addEventListener("click", closePanel);
+
+  // ---------- loop ----------
+  function resize() {
+    var w = innerWidth, h = innerHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h;
+    camera.fov = w < 640 ? 58 : 45; camera.updateProjectionMatrix();
+  }
+  addEventListener("resize", resize); resize();
+
+  var clock = new THREE.Clock(), insideId = null, camPos = new THREE.Vector3(), look = new THREE.Vector3();
+  camera.position.copy(CAM_OFFSET);
+
+  function tick() {
+    var dt = Math.min(clock.getDelta(), 0.05), time = clock.elapsedTime;
+
+    var up = keys.w || keys.arrowup, down = keys.s || keys.arrowdown;
+    var left = keys.a || keys.arrowleft, right = keys.d || keys.arrowright;
+    var throttle = (up ? 1 : 0) - (down ? 1 : 0) + (-joy.y);
+    var steerIn = (left ? 1 : 0) - (right ? 1 : 0) + (-joy.x);
+    throttle = Math.max(-1, Math.min(1, throttle)); steerIn = Math.max(-1, Math.min(1, steerIn));
+    if (!started) { throttle = 0; steerIn = 0; }
+
+    var MAX = 15, REV = -6;
+    state.v += throttle * 22 * dt;
+    if (keys[" "]) state.v *= Math.pow(0.02, dt);
+    if (!throttle) state.v *= Math.pow(0.25, dt);
+    state.v = Math.max(REV, Math.min(MAX, state.v));
+    state.steer += (steerIn - state.steer) * Math.min(1, dt * 8);
+    state.h += state.steer * 2.4 * dt * Math.max(-1, Math.min(1, state.v / 6));
+    state.x += Math.sin(state.h) * state.v * dt;
+    state.z += Math.cos(state.h) * state.v * dt;
+    var dist = Math.hypot(state.x, state.z);
+    if (dist > WORLD_R) { state.x *= WORLD_R / dist; state.z *= WORLD_R / dist; state.v *= -0.3; }
+
+    car.position.set(state.x, 0, state.z);
+    car.rotation.y = state.h;
+    body.rotation.z = -state.steer * Math.min(1, Math.abs(state.v) / MAX) * 0.06;
+    wheels.forEach(function (w, i) { w.children[0].rotation.x += state.v * dt / 0.42; w.children[1].rotation.x = w.children[0].rotation.x; if (i < 2) w.rotation.y = state.steer * 0.4; });
+
+    // camera follow
+    camPos.set(state.x + CAM_OFFSET.x, CAM_OFFSET.y, state.z + CAM_OFFSET.z);
+    camera.position.lerp(camPos, Math.min(1, dt * 4));
+    look.set(camera.position.x - CAM_OFFSET.x, 0.8, camera.position.z - CAM_OFFSET.z);
+    camera.lookAt(look);
+    sun.position.set(state.x - 18, 30, state.z - 10); sun.target.position.set(state.x, 0, state.z);
+
+    // zones
+    var nowInside = null;
+    pads.forEach(function (p) {
+      var dd = Math.hypot(state.x - p.zone.x, state.z - p.zone.z);
+      var near = dd < 3.4;
+      if (near) nowInside = p.zone;
+      var s = 1 + Math.sin(time * 3) * 0.04 + (near ? 0.12 : 0);
+      p.ring.scale.set(s, s, s);
+      p.pad.material.emissiveIntensity = near ? 0.45 : 0.15;
+    });
+    if (nowInside && insideId !== nowInside.id) { openPanel(nowInside); }
+    insideId = nowInside ? nowInside.id : null;
+
+    bobbers.forEach(function (b) { b.o.position.y = b.base + Math.sin(time * 2 + b.phase) * 0.2; if (b.spin) b.o.rotation.y = time; });
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  }
+
+  if (document.fonts && document.fonts.load) {
+    Promise.all([document.fonts.load("900 120px Archivo"), document.fonts.load("500 44px 'IBM Plex Mono'")]).then(function () {
+      drawn.forEach(function (d) { d.draw(d.c.getContext("2d")); d.t.needsUpdate = true; });
+    }).catch(function () {});
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
